@@ -24,6 +24,11 @@ in
     inherit (self) mavenix;
   };
 
+  ethereum-semantics-plugin-ocaml = import ./pkgs/evm-semantics {
+    inherit (self) stdenv k pandoc protobuf zlib;
+    ocamlPackages = self.ocamlPackages_4_06_k;
+  };
+
   ocamlPackages_4_06_k =
     let
       ocaml =
