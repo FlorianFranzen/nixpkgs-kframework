@@ -6,21 +6,17 @@
 
   makeWrapper,
 
-  flex, gcc, git, gmp, jdk, mpfr, pkgconfig, python3, ocamlPackages, z3
-}:
+  flex, gcc, git, gmp, jdk, mpfr, pkgconfig, python3, z3,
 
-let
-  inherit (ocamlPackages)
-    ocaml findlib mlgmp uuidm zarith;
-in
+  llvm-backend,
+}:
 
 let
   # PATH used at runtime
   hostPATH =
     lib.makeBinPath [
       flex gcc gmp jdk mpfr pkgconfig python3 z3
-      # OCaml packages
-      ocaml findlib
+      llvm-backend
     ];
 
   /*
@@ -55,13 +51,7 @@ mavenix.buildMaven {
 
   propagatedBuildInputs = [
     flex gcc gmp jdk mpfr pkgconfig python3 z3
-
-    # OCaml packages
-    ocaml
-    findlib  # Setup hook sets OCAMLPATH
-    mlgmp
-    uuidm
-    zarith
+    llvm-backend
   ];
 
   # Set build environment variables
@@ -90,32 +80,9 @@ mavenix.buildMaven {
     rm -fr "$out/lib/opam"
 
     for prog in $out/bin/*; do
-      wrapProgram $prog \
-        --prefix PATH : ${hostPATH} \
-        --prefix OCAMLPATH : "''${OCAMLPATH:?}"
+      wrapProgram $prog --prefix PATH : ${hostPATH}
     done
   '';
-
-  passthru = {
-    patches = {
-      mlgmp = [
-        (let inherit (lib.importJSON ./mlgmp.patch.json) file rev sha256; in
-          fetchurl {
-            url = "https://raw.githubusercontent.com/kframework/k/${rev}/${file}";
-            inherit sha256;
-          }
-        )
-      ];
-      ocaml = [
-        (let inherit (lib.importJSON ./ocaml.patch.json) file rev sha256; in
-          fetchurl {
-            url = "https://raw.githubusercontent.com/kframework/k/${rev}/${file}";
-            inherit sha256;
-          }
-        )
-      ];
-    };
-  };
 
   # Add extra maven dependencies which might not have been picked up
   #   automatically
